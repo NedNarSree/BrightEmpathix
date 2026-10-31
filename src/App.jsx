@@ -1,28 +1,81 @@
 
-import { useState } from "react";
-import Products from "./Pages/Products";
-import Plans from "./Pages/Plans";
+import { useEffect, useState } from 'react'
 
-function App() {
-  const [activeTab, setActiveTab] = useState("products");
+import Sidebar, { navGroups } from './components/Sidebar'
+import Navbar from './components/Navbar'
+
+import Dashboard from './pages/Dashboard'
+import Landing from './pages/Landing'
+import Pricing from './pages/Pricing'
+import Auth from './pages/Auth'
+
+import Products from './Pages/Products'
+import Plans from './Pages/Plans'
+
+const Placeholder = ({ name }) => (
+  <div className="rounded-lg border border-dashed border-ink/25 p-10 text-center text-ink/60">
+    The {name} page is coming from its owner.
+  </div>
+)
+
+const labels = Object.fromEntries(
+  navGroups.flatMap((g) =>
+    g.items.map((i) => [i.id, i.label])
+  )
+)
+
+export default function App() {
+  const [view, setView] = useState('landing')
+  const [page, setPage] = useState('dashboard')
+  const [role, setRole] = useState('Admin')
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [view])
+
+  const changeRole = (r) => {
+    setRole(r)
+    setPage(r === 'Customer' ? 'invoices' : 'dashboard')
+  }
+
+  const enterApp = (r = 'Admin') => {
+    changeRole(r)
+    setView('app')
+  }
+
+  if (view === 'landing') return <Landing go={setView} enter={enterApp} />
+  if (view === 'pricing') return <Pricing go={setView} enter={enterApp} />
+  if (view === 'login') return <Auth go={setView} enter={enterApp} />
+
+  const pages = {
+    dashboard: <Dashboard onNavigate={setPage} />,
+    products: <Products />,
+    plans: <Plans />,
+  }
 
   return (
-    <div style={{ padding: "30px", fontFamily: "Arial" }}>
-      <h1>Brightloop Subscription Management</h1>
+    <div className="min-h-screen">
+      <Sidebar
+        page={page}
+        onNavigate={setPage}
+        role={role}
+        onRoleChange={changeRole}
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onHome={() => setView('landing')}
+      />
 
-      <nav style={{ display: "flex", gap: "12px", marginBottom: "25px" }}>
-        <button onClick={() => setActiveTab("products")}>
-          Products
-        </button>
+      <div className="lg:pl-60">
+        <Navbar
+          title={page === 'dashboard' ? '' : labels[page]}
+          onMenu={() => setMenuOpen(true)}
+        />
 
-        <button onClick={() => setActiveTab("plans")}>
-          Plans
-        </button>
-      </nav>
-
-      {activeTab === "products" ? <Products /> : <Plans />}
+        <main className="px-4 pb-16 pt-4 lg:px-10">
+          {pages[page] || <Placeholder name={labels[page] || page} />}
+        </main>
+      </div>
     </div>
-  );
+  )
 }
-
-export default App;
