@@ -1,9 +1,7 @@
-
-import Customers from "./Pages/Customers";
+import Subscriptions from "./Pages/Subscriptions";
 
 function App() {
-  return <Customers />;
+  return <Subscriptions />;
 }
 
 export default App;
-
