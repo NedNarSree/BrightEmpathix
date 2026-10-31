@@ -1,6 +1,13 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "../Plans.css";
+
+import {
+  getPlans,
+  addPlan,
+  updatePlan,
+  deletePlan,
+} from "../services/planService";
 
 function Plans({ products, plans, setPlans }) {
   const emptyForm = {
@@ -17,6 +24,27 @@ function Plans({ products, plans, setPlans }) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+const [saving, setSaving] = useState(false);
+const [error, setError] = useState("");
+useEffect(() => {
+  async function loadPlans() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await getPlans();
+      setPlans(data);
+    } catch (err) {
+      console.error("Error loading plans:", err);
+      setError(err.message || "Could not load plans.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  loadPlans();
+}, [setPlans]);
 
   const filteredPlans = plans.filter((plan) =>
     plan.name.toLowerCase().includes(search.toLowerCase())
@@ -27,39 +55,73 @@ function Plans({ products, plans, setPlans }) {
     setForm({ ...form, [name]: value });
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
 
-    if (
-      form.availableFrom &&
-      form.availableTo &&
-      form.availableTo < form.availableFrom
-    ) {
-      alert("Availability end date cannot be before the start date.");
-      return;
-    }
+async function handleSubmit(e) {
+  e.preventDefault();
 
-    const planData = {
-      ...form,
-      price: Number(form.price),
-      minQuantity: Number(form.minQuantity),
-    };
+  if (!form.name.trim()) {
+    alert("Please enter a plan name.");
+    return;
+  }
+
+  if (!form.productId) {
+    alert("Please select a product.");
+    return;
+  }
+
+  if (
+    form.price === "" ||
+    !Number.isFinite(Number(form.price)) ||
+    Number(form.price) < 0 ||
+    form.minQuantity === "" ||
+    !Number.isInteger(Number(form.minQuantity)) ||
+    Number(form.minQuantity) < 1
+  ) {
+    alert("Please enter a valid price and minimum quantity.");
+    return;
+  }
+
+  if (
+    form.availableFrom &&
+    form.availableTo &&
+    form.availableTo < form.availableFrom
+  ) {
+    alert("Availability end date cannot be before the start date.");
+    return;
+  }
+
+  const planData = {
+    ...form,
+    price: Number(form.price),
+    minQuantity: Number(form.minQuantity),
+  };
+
+  try {
+    setSaving(true);
+    setError("");
 
     if (editingId !== null) {
+      const updatedPlan = await updatePlan(editingId, planData);
+
       setPlans((previous) =>
         previous.map((plan) =>
-          plan.id === editingId ? { ...plan, ...planData } : plan
+          plan.id === editingId ? updatedPlan : plan
         )
       );
     } else {
-      setPlans((previous) => [
-        ...previous,
-        { id: Date.now(), ...planData },
-      ]);
+      const newPlan = await addPlan(planData);
+
+      setPlans((previous) => [...previous, newPlan]);
     }
 
     handleCancel();
+  } catch (err) {
+    console.error("Error saving plan:", err);
+    setError(err.message || "Could not save plan.");
+  } finally {
+    setSaving(false);
   }
+}
 
   function handleEdit(plan) {
     setForm({
@@ -76,14 +138,24 @@ function Plans({ products, plans, setPlans }) {
     setShowForm(true);
   }
 
-  function handleDelete(id) {
-    if (window.confirm("Are you sure you want to delete this plan?")) {
-      setPlans((previous) =>
-        previous.filter((plan) => plan.id !== id)
-      );
-    }
+async function handleDelete(id) {
+  if (!window.confirm("Are you sure you want to delete this plan?")) {
+    return;
   }
 
+  try {
+    setError("");
+
+    await deletePlan(id);
+
+    setPlans((previous) =>
+      previous.filter((plan) => plan.id !== id)
+    );
+  } catch (err) {
+    console.error("Error deleting plan:", err);
+    setError(err.message || "Could not delete plan.");
+  }
+}
   function handleCancel() {
     setForm(emptyForm);
     setEditingId(null);
@@ -235,14 +307,27 @@ function Plans({ products, plans, setPlans }) {
               Cancel
             </button>
 
-            <button type="submit" className="plan-primary-btn">
-              {editingId !== null ? "Save Changes" : "Create Plan"}
-            </button>
+            <button
+  type="submit"
+  className="plan-primary-btn"
+  disabled={saving}
+>
+  {saving
+    ? "Saving..."
+    : editingId !== null
+      ? "Save Changes"
+      : "Create Plan"}
+</button>
           </div>
         </form>
       )}
 
       <div className="plan-table-card">
+        {error && (
+  <p style={{ color: "red", padding: "10px" }}>
+    {error}
+  </p>
+)}
         <div className="plan-table-header">
           <h3>All Plans</h3>
 
@@ -268,52 +353,64 @@ function Plans({ products, plans, setPlans }) {
               </tr>
             </thead>
 
-            <tbody>
-              {filteredPlans.map((plan) => (
-                <tr key={plan.id}>
-                  <td className="plan-name">{plan.name}</td>
-                  <td>{getProductName(plan.productId)}</td>
-                  <td>
-                    <span className="billing-badge">
-                      {plan.billingCycle}
-                    </span>
-                  </td>
-                  <td>₹{plan.price.toLocaleString("en-IN")}</td>
-                  <td>{plan.minQuantity}</td>
-                  <td>
-                    {plan.availableFrom || "—"}
-                    {plan.availableTo
-                      ? ` to ${plan.availableTo}`
-                      : " onwards"}
-                  </td>
-                  <td>
-                    <div className="plan-actions">
-                      <button
-                        className="plan-edit-btn"
-                        onClick={() => handleEdit(plan)}
-                      >
-                        Edit
-                      </button>
+           
+<tbody>
+  {loading ? (
+    <tr>
+      <td colSpan="7" className="plan-empty">
+        Loading plans...
+      </td>
+    </tr>
+  ) : (
+    <>
+      {filteredPlans.map((plan) => (
+        <tr key={plan.id}>
+          <td className="plan-name">{plan.name}</td>
+          <td>{getProductName(plan.productId)}</td>
+          <td>
+            <span className="billing-badge">
+              {plan.billingCycle}
+            </span>
+          </td>
+          <td>₹{plan.price.toLocaleString("en-IN")}</td>
+          <td>{plan.minQuantity}</td>
+          <td>
+            {plan.availableFrom || "—"}
+            {plan.availableTo
+              ? ` to ${plan.availableTo}`
+              : " onwards"}
+          </td>
+          <td>
+            <div className="plan-actions">
+              <button
+                className="plan-edit-btn"
+                onClick={() => handleEdit(plan)}
+              >
+                Edit
+              </button>
 
-                      <button
-                        className="plan-delete-btn"
-                        onClick={() => handleDelete(plan.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              <button
+                className="plan-delete-btn"
+                onClick={() => handleDelete(plan.id)}
+              >
+                Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      ))}
 
-              {filteredPlans.length === 0 && (
-                <tr>
-                  <td colSpan="7" className="plan-empty">
-                    No plans found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
+      {filteredPlans.length === 0 && (
+        <tr>
+          <td colSpan="7" className="plan-empty">
+            No plans found.
+          </td>
+        </tr>
+      )}
+    </>
+  )}
+</tbody>
+ 
           </table>
         </div>
       </div>
