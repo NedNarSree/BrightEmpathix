@@ -17,8 +17,30 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+# Dependencies
+node_modules
+
+# Production build
+dist
+dist-ssr
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.vscode
+.idea
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+node_modules/
+.env
+.env.*
+!.env.example
+dist/
