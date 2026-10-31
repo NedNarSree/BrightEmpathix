@@ -26,73 +26,28 @@ A web-based Subscription Management System built during a hackathon to manage pr
 - Support daily, weekly, monthly, and yearly billing cycles.
 - Configure plan prices, minimum quantities, and availability dates.
 
-### Subscription Management
-- Designed to support customer subscriptions and subscription lifecycle tracking.
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+It provides role-based access and real-time dashboards to track revenue, active subscriptions, and overdue payments efficiently.
 
-### Billing and Payments
-- Designed to support invoice generation, payment recording, and payment status tracking.
+---
 
-## Database Structure
+## BrightEmpathix UI
 
-### products
-- id (UUID, primary key)
-- name
-- type
-- sales_price (BIGINT, paise)
-- cost_price (BIGINT, paise)
-- notes
-- created_at
+### Run it
+```bash
+npm install
+npm run dev        # opens on http://localhost:5173
+```
 
-### plans
-- id (UUID, primary key)
-- product_id (UUID, foreign key referencing products.id)
-- name
-- billing_cycle
-- price (BIGINT, paise)
-- min_quantity
-- available_from
-- available_to
-- created_at
+### Views (`src/App.jsx`)
+- Landing
+- Pricing
+- Login (`/auth`)
+- App (dashboard with sidebar shell)
 
-## Local Setup
-
-1. Clone the repository:
-
-   ```bash
-   git clone YOUR_GITHUB_REPOSITORY_URL
-   ```
-
-2. Enter the project directory:
-
-   ```bash
-   cd BrightEmpathix
-   ```
-
-3. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-4. Create a `.env` file in the project root:
-
-   ```env
-   VITE_SUPABASE_URL=your_supabase_project_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_publishable_key
-   ```
-
-5. Start the development server:
-
-   ```bash
-   npm run dev
-   ```
-
-## Security
-
-- Environment variables are excluded from Git using `.gitignore`.
-- Supabase Row Level Security is enabled on the database tables.
-- Public database access policies are currently configured for the hackathon demo and should be restricted before production use.
-
-## Project Status
-
-Developed as a four-member hackathon project. Product management is connected to Supabase. Plan management and other modules are being integrated and tested.
+### Guidelines for Teammates
+- Components: `<StatusBadge status="Paid" />`, `formatCurrency(n)`
+- Tailwind Theme classes: `bg-primary`, `bg-secondary`, `text-accent`, `bg-canvas`, `text-ink`, `border-ink/15`, `font-display` for big numbers
+- Default theme: `DEFAULT_THEME` in `src/theme/themes.js` (Emerald Ledger)
+- Auth page: UI only (wire submit to Supabase Auth)
+- Never commit `.env` (configured in `.gitignore`)
