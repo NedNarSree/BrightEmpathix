@@ -1,51 +1,31 @@
-import { useState } from 'react'
-import { discounts, invoices as initialInvoices, payments as initialPayments, subscriptions, taxes } from './data/mockData.js'
-import Invoices from './Pages/Invoices.jsx'
-import Payments from './Pages/Payments.jsx'
-
-const navStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  padding: '12px 24px',
-  background: '#0F261F',
-}
-
-const buttonStyle = {
-  padding: '8px 14px',
-  border: '1px solid transparent',
-  borderRadius: '4px',
-  fontSize: '15px',
-  fontWeight: 500,
-  cursor: 'pointer',
-}
+<import { useState } from 'react'
+import Subscriptions from './Pages/Subscriptions'
+import Invoices from './Pages/Invoices'
+import Payments from './Pages/Payments'
+import {
+  discounts,
+  invoices as initialInvoices,
+  payments as initialPayments,
+  subscriptions,
+  taxes,
+} from './data/mockData.js'
 
 function App() {
-  const [activePage, setActivePage] = useState('invoices')
+  const [activePage, setActivePage] = useState('subscriptions')
   const [sharedInvoices, setSharedInvoices] = useState(initialInvoices)
   const [sharedPayments, setSharedPayments] = useState(initialPayments)
 
   return (
     <>
-      <nav aria-label="Billing pages" style={navStyle}>
-        <button
-          type="button"
-          aria-current={activePage === 'invoices' ? 'page' : undefined}
-          onClick={() => setActivePage('invoices')}
-          style={{ ...buttonStyle, background: activePage === 'invoices' ? '#00592E' : 'transparent', color: '#fff' }}
-        >
-          Invoices
-        </button>
-        <button
-          type="button"
-          aria-current={activePage === 'payments' ? 'page' : undefined}
-          onClick={() => setActivePage('payments')}
-          style={{ ...buttonStyle, background: activePage === 'payments' ? '#00592E' : 'transparent', color: '#fff' }}
-        >
-          Payments
-        </button>
+      <nav>
+        <button onClick={() => setActivePage('subscriptions')}>Subscriptions</button>
+        <button onClick={() => setActivePage('invoices')}>Invoices</button>
+        <button onClick={() => setActivePage('payments')}>Payments</button>
       </nav>
-      {activePage === 'invoices' ? (
+
+      {activePage === 'subscriptions' && <Subscriptions />}
+
+      {activePage === 'invoices' && (
         <Invoices
           invoices={sharedInvoices}
           setInvoices={setSharedInvoices}
@@ -53,7 +33,9 @@ function App() {
           taxes={taxes}
           discounts={discounts}
         />
-      ) : (
+      )}
+
+      {activePage === 'payments' && (
         <Payments
           invoices={sharedInvoices}
           setInvoices={setSharedInvoices}
@@ -65,4 +47,4 @@ function App() {
   )
 }
 
-export default App
+export default App>>>> main
