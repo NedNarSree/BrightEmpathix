@@ -1,10 +1,10 @@
 import React from "react";
+import PlanForm from "../Components/PlanForm.jsx";
 
 function Plans() {
   return (
-    <div>
-      <h1>Plan Management</h1>
-      <p>Manage your subscription plans here.</p>
+    <div style={{ padding: "20px" }}>
+      <PlanForm />
     </div>
   );
 }
