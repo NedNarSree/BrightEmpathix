@@ -1,6 +1,3 @@
-import { useState } from 'react'
-import { invoices, payments } from '../data/mockData.js'
-
 const pageStyle = {
   boxSizing: 'border-box',
   width: '100%',
@@ -47,12 +44,10 @@ const bodyCellStyle = {
   whiteSpace: 'nowrap',
 }
 
-function Payments() {
-  const [currentInvoices, setCurrentInvoices] = useState(invoices)
-  const [paymentHistory, setPaymentHistory] = useState(payments)
+function Payments({ invoices: currentInvoices, setInvoices, payments: paymentHistory, setPayments }) {
   const pendingInvoices = currentInvoices.filter((invoice) => invoice.status !== 'paid')
 
-  function processPayment(invoiceId, timestamp) {
+  function processPayment(invoiceId, timestamp, paymentDate) {
     const invoice = currentInvoices.find((item) => item.id === invoiceId)
     if (!invoice) {
       return
@@ -63,12 +58,12 @@ function Payments() {
       invoice_id: invoiceId,
       method: 'credit_card',
       amount: invoice.total,
-      date: new Date().toISOString().split('T')[0],
+      date: paymentDate,
     }
     const updatedInvoice = { ...invoice, status: 'paid', amount_paid: invoice.total }
 
-    setPaymentHistory((history) => [...history, payment])
-    setCurrentInvoices((items) => items.map((item) => item.id === invoiceId ? updatedInvoice : item))
+    setPayments((history) => [...history, payment])
+    setInvoices((items) => items.map((item) => item.id === invoiceId ? updatedInvoice : item))
     window.alert('Payment successful!')
   }
 
@@ -103,7 +98,7 @@ function Payments() {
                   <td style={{ ...bodyCellStyle, textAlign: 'right' }}>
                     <button
                       type="button"
-                      onClick={() => processPayment(invoice.id, Date.now())}
+                      onClick={() => processPayment(invoice.id, Date.now(), new Date().toISOString().split('T')[0])}
                       style={{ padding: '8px 14px', border: 0, borderRadius: '4px', background: '#00592E', color: '#fff', fontWeight: 500, cursor: 'pointer' }}
                     >
                       Pay Now

@@ -1,5 +1,3 @@
-import { useState } from 'react'
-import { discounts, invoices, subscriptions, taxes } from '../data/mockData.js'
 import { runBilling } from '../utils/billing.js'
 
 const pageStyle = {
@@ -48,12 +46,10 @@ const bodyCellStyle = {
   whiteSpace: 'nowrap',
 }
 
-function Invoices() {
-  const [invoiceList, setInvoiceList] = useState(invoices)
-
+function Invoices({ invoices, setInvoices, subscriptions, taxes, discounts }) {
   function handleRunBilling() {
-    const result = runBilling(subscriptions, taxes, discounts, invoiceList, '2026-10-31')
-    setInvoiceList((currentInvoices) => [...currentInvoices, ...result.created])
+    const result = runBilling(subscriptions, taxes, discounts, invoices, '2026-10-31')
+    setInvoices((currentInvoices) => [...currentInvoices, ...result.created])
     window.alert(`${result.created.length} invoices created and ${result.skipped.length} skipped.`)
   }
 
@@ -83,13 +79,13 @@ function Invoices() {
             </tr>
           </thead>
           <tbody>
-            {invoiceList.length === 0 ? (
+            {invoices.length === 0 ? (
               <tr>
                 <td colSpan="5" style={{ ...bodyCellStyle, padding: '28px 16px', color: '#52665A', textAlign: 'center' }}>
                   No invoices yet. Run auto-billing to generate invoices for active subscriptions.
                 </td>
               </tr>
-            ) : invoiceList.map((invoice, index) => (
+            ) : invoices.map((invoice, index) => (
               <tr key={invoice.id ?? `${invoice.subscription_id}-${invoice.period_start}-${index}`}>
                 <td style={bodyCellStyle}>{invoice.number}</td>
                 <td style={bodyCellStyle}>{invoice.period_start}</td>
