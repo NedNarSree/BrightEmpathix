@@ -16,45 +16,49 @@ const plans = [
   { id: "P003", name: "Premium Plan", price: 1999 },
 ];
 
+const initialFormData = {
+  customer_id: "",
+  plan_id: "",
+  start_date: "",
+  expiry_date: "",
+  status: "Draft",
+};
+
 function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
-
   const [searchTerm, setSearchTerm] = useState("");
-const [statusFilter, setStatusFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [editingId, setEditingId] = useState(null);
 
-  const [formData, setFormData] = useState({
-    customer_id: "",
-    plan_id: "",
-    start_date: "",
-    expiry_date: "",
-    status: "Draft",
-  });
-const filteredSubscriptions = subscriptions.filter((sub) => {
-  const customer = customers.find(
-    (c) => c.id === sub.customer_id
-  );
+  const [formData, setFormData] = useState(initialFormData);
 
-  const plan = plans.find(
-    (p) => p.id === sub.plan_id
-  );
-
-  const search = searchTerm.toLowerCase();
-
-  const matchesSearch =
-    sub.subscription_number.toLowerCase().includes(search) ||
-    customer?.name.toLowerCase().includes(search) ||
-    plan?.name.toLowerCase().includes(search);
-
-  const matchesStatus =
-    statusFilter === "All" || sub.status === statusFilter;
-
-  return matchesSearch && matchesStatus;
-});
   const selectedPlan = plans.find(
     (plan) => plan.id === formData.plan_id
   );
 
   const unitPrice = selectedPlan ? selectedPlan.price : "";
+
+  const filteredSubscriptions = subscriptions.filter((sub) => {
+    const customer = customers.find(
+      (c) => c.id === sub.customer_id
+    );
+
+    const plan = plans.find(
+      (p) => p.id === sub.plan_id
+    );
+
+    const search = searchTerm.toLowerCase();
+
+    const matchesSearch =
+      sub.subscription_number.toLowerCase().includes(search) ||
+      customer?.name.toLowerCase().includes(search) ||
+      plan?.name.toLowerCase().includes(search);
+
+    const matchesStatus =
+      statusFilter === "All" || sub.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -63,6 +67,16 @@ const filteredSubscriptions = subscriptions.filter((sub) => {
       ...previous,
       [name]: value,
     }));
+  }
+
+  function handleStatusChange(subscriptionId, newStatus) {
+    setSubscriptions((previous) =>
+      previous.map((sub) =>
+        sub.id === subscriptionId
+          ? { ...sub, status: newStatus }
+          : sub
+      )
+    );
   }
 
   function handleSubmit(e) {
@@ -76,31 +90,86 @@ const filteredSubscriptions = subscriptions.filter((sub) => {
       return;
     }
 
-    const newSubscription = {
-      id: String(Date.now()),
-      subscription_number: `SUB-${Date.now()}`,
-      customer_id: formData.customer_id,
-      plan_id: formData.plan_id,
-      start_date: formData.start_date,
-      expiry_date: formData.expiry_date || null,
-      status: formData.status,
-      unit_price: unitPrice,
-    };
+    if (editingId) {
+      setSubscriptions((previous) =>
+        previous.map((sub) =>
+          sub.id === editingId
+            ? {
+                ...sub,
+                customer_id: formData.customer_id,
+                plan_id: formData.plan_id,
+                start_date: formData.start_date,
+                expiry_date: formData.expiry_date || null,
+                status: formData.status,
+                unit_price: unitPrice,
+              }
+            : sub
+        )
+      );
 
-    setSubscriptions((previous) => [
-      ...previous,
-      newSubscription,
-    ]);
+      alert("Subscription updated successfully!");
+    } else {
+      const newSubscription = {
+        id: String(Date.now()),
+        subscription_number: `SUB-${Date.now()}`,
+        customer_id: formData.customer_id,
+        plan_id: formData.plan_id,
+        start_date: formData.start_date,
+        expiry_date: formData.expiry_date || null,
+        status: formData.status,
+        unit_price: unitPrice,
+      };
+
+      setSubscriptions((previous) => [
+        ...previous,
+        newSubscription,
+      ]);
+
+      alert("Subscription created successfully!");
+    }
+
+    setFormData(initialFormData);
+    setEditingId(null);
+  }
+
+  function handleEdit(sub) {
+    setEditingId(sub.id);
 
     setFormData({
-      customer_id: "",
-      plan_id: "",
-      start_date: "",
-      expiry_date: "",
-      status: "Draft",
+      customer_id: sub.customer_id,
+      plan_id: sub.plan_id,
+      start_date: sub.start_date,
+      expiry_date: sub.expiry_date || "",
+      status: sub.status,
     });
 
-    alert("Subscription created successfully!");
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null);
+    setFormData(initialFormData);
+  }
+
+  function handleDelete(subscriptionId) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this subscription?"
+    );
+
+    if (!confirmed) return;
+
+    setSubscriptions((previous) =>
+      previous.filter((sub) => sub.id !== subscriptionId)
+    );
+
+    if (editingId === subscriptionId) {
+      handleCancelEdit();
+    }
+
+    alert("Subscription deleted successfully!");
   }
 
   return (
@@ -135,15 +204,22 @@ const filteredSubscriptions = subscriptions.filter((sub) => {
         <section className="form-card">
           <div className="card-heading">
             <div>
-              <h2>Create New Subscription</h2>
-              <p>Enter the details below.</p>
+              <h2>
+                {editingId
+                  ? "Edit Subscription"
+                  : "Create New Subscription"}
+              </h2>
+              <p>
+                {editingId
+                  ? "Update the subscription details below."
+                  : "Enter the details below."}
+              </p>
             </div>
             <span className="card-icon">＋</span>
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className="form-grid">
-
               <div className="form-group">
                 <label>Choose Customer</label>
                 <select
@@ -153,7 +229,6 @@ const filteredSubscriptions = subscriptions.filter((sub) => {
                   required
                 >
                   <option value="">Select a customer</option>
-
                   {customers.map((customer) => (
                     <option key={customer.id} value={customer.id}>
                       {customer.name}
@@ -171,7 +246,6 @@ const filteredSubscriptions = subscriptions.filter((sub) => {
                   required
                 >
                   <option value="">Select a plan</option>
-
                   {plans.map((plan) => (
                     <option key={plan.id} value={plan.id}>
                       {plan.name}
@@ -224,13 +298,24 @@ const filteredSubscriptions = subscriptions.filter((sub) => {
                   <option value="Closed">Closed</option>
                 </select>
               </div>
-
             </div>
 
             <div className="form-actions">
               <button type="submit" className="create-btn">
-                + Create Subscription
+                {editingId
+                  ? "Save Changes"
+                  : "+ Create Subscription"}
               </button>
+
+              {editingId && (
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={handleCancelEdit}
+                >
+                  Cancel
+                </button>
+              )}
             </div>
           </form>
         </section>
@@ -239,30 +324,31 @@ const filteredSubscriptions = subscriptions.filter((sub) => {
           <div className="card-heading">
             <div>
               <h2>Subscription Records</h2>
-              <p>View all created subscriptions.</p>
+              <p>View and manage all subscriptions.</p>
             </div>
-            <div className="subscription-filters">
-  <input
-    type="text"
-    placeholder="Search by customer, plan or subscription ID..."
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-  />
-
-  <select
-    value={statusFilter}
-    onChange={(e) => setStatusFilter(e.target.value)}
-  >
-    <option value="All">All Statuses</option>
-    <option value="Draft">Draft</option>
-    <option value="Active">Active</option>
-    <option value="Closed">Closed</option>
-  </select>
-</div>
 
             <span className="record-count">
-              {subscriptions.length} Records
+              {filteredSubscriptions.length} Records
             </span>
+          </div>
+
+          <div className="subscription-filters">
+            <input
+              type="text"
+              placeholder="Search by customer, plan or subscription ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="All">All Statuses</option>
+              <option value="Draft">Draft</option>
+              <option value="Active">Active</option>
+              <option value="Closed">Closed</option>
+            </select>
           </div>
 
           {subscriptions.length === 0 ? (
@@ -270,6 +356,11 @@ const filteredSubscriptions = subscriptions.filter((sub) => {
               <div className="empty-icon">▤</div>
               <h3>No subscriptions yet</h3>
               <p>Create your first subscription above.</p>
+            </div>
+          ) : filteredSubscriptions.length === 0 ? (
+            <div className="empty-state">
+              <h3>No matching subscriptions</h3>
+              <p>Try changing your search or status filter.</p>
             </div>
           ) : (
             <div className="table-wrapper">
@@ -283,6 +374,7 @@ const filteredSubscriptions = subscriptions.filter((sub) => {
                     <th>Expiry Date</th>
                     <th>Unit Price</th>
                     <th>Status</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
 
@@ -304,10 +396,42 @@ const filteredSubscriptions = subscriptions.filter((sub) => {
                         <td>{sub.start_date}</td>
                         <td>{sub.expiry_date || "No expiry"}</td>
                         <td>₹{sub.unit_price}</td>
+
                         <td>
-                          <span className={`status ${sub.status.toLowerCase()}`}>
-                            {sub.status}
-                          </span>
+                          <select
+                            className={`status-select ${sub.status.toLowerCase()}`}
+                            value={sub.status}
+                            onChange={(e) =>
+                              handleStatusChange(
+                                sub.id,
+                                e.target.value
+                              )
+                            }
+                          >
+                            <option value="Draft">Draft</option>
+                            <option value="Active">Active</option>
+                            <option value="Closed">Closed</option>
+                          </select>
+                        </td>
+
+                        <td>
+                          <div className="action-buttons">
+                            <button
+                              type="button"
+                              className="edit-btn"
+                              onClick={() => handleEdit(sub)}
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              className="delete-btn"
+                              onClick={() => handleDelete(sub.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
