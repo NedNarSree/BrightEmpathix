@@ -1,8 +1,36 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "../Products.css";
 
+import {
+  getProducts,
+  addProduct,
+  updateProduct,
+  deleteProduct,
+} from "../services/productService";
+
 function Products({ products, setProducts, plans }) {
+  const [loading, setLoading] = useState(true);
+const [error, setError] = useState("");
+const [saving, setSaving] = useState(false);
+useEffect(() => {
+  async function loadProducts() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await getProducts();
+      setProducts(data);
+    } catch (err) {
+      console.error("Error loading products:", err);
+      setError(err.message || "Could not load products.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  loadProducts();
+}, [setProducts]);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -29,53 +57,61 @@ function Products({ products, setProducts, plans }) {
     }));
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
+async function handleSubmit(e) {
+  e.preventDefault();
 
-    const productData = {
-      ...form,
-      name: form.name.trim(),
-      salesPrice: Number(form.salesPrice),
-      costPrice: Number(form.costPrice),
-      notes: form.notes.trim(),
-    };
+  const productData = {
+    ...form,
+    name: form.name.trim(),
+    salesPrice: Number(form.salesPrice),
+    costPrice: Number(form.costPrice),
+    notes: form.notes.trim(),
+  };
 
-    if (
-      !productData.name ||
-      form.salesPrice === "" ||
-      form.costPrice === "" ||
-      !Number.isFinite(productData.salesPrice) ||
-      !Number.isFinite(productData.costPrice) ||
-      productData.salesPrice < 0 ||
-      productData.costPrice < 0
-    ) {
-      alert("Please enter valid product details.");
-      return;
-    }
+  if (
+    !productData.name ||
+    form.salesPrice === "" ||
+    form.costPrice === "" ||
+    !Number.isFinite(productData.salesPrice) ||
+    !Number.isFinite(productData.costPrice) ||
+    productData.salesPrice < 0 ||
+    productData.costPrice < 0
+  ) {
+    alert("Please enter valid product details.");
+    return;
+  }
+
+  try {
+    setSaving(true);
+    setError("");
 
     if (editingId !== null) {
+      const updatedProduct = await updateProduct(
+        editingId,
+        productData
+      );
+
       setProducts((previous) =>
         previous.map((product) =>
-          product.id === editingId
-            ? { ...product, ...productData }
-            : product
+          product.id === editingId ? updatedProduct : product
         )
       );
     } else {
-      setProducts((previous) => [
-        ...previous,
-        {
-          id: Date.now(),
-          ...productData,
-        },
-      ]);
+      const newProduct = await addProduct(productData);
+
+      setProducts((previous) => [...previous, newProduct]);
     }
 
     setForm(emptyForm);
     setShowForm(false);
     setEditingId(null);
+  } catch (err) {
+    console.error("Error saving product:", err);
+    setError(err.message || "Could not save product.");
+  } finally {
+    setSaving(false);
   }
-
+}
   function handleEdit(product) {
     setForm({
       name: product.name,
@@ -89,23 +125,33 @@ function Products({ products, setProducts, plans }) {
     setShowForm(true);
   }
 
-  function handleDelete(id) {
-    const isLinkedToPlan = plans.some(
-      (plan) => String(plan.productId) === String(id)
-    );
+async function handleDelete(id) {
+  const isLinkedToPlan = plans.some(
+    (plan) => String(plan.productId) === String(id)
+  );
 
-    if (isLinkedToPlan) {
-      alert("This product is linked to a plan. Delete the plan first.");
-      return;
-    }
-
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      setProducts((previous) =>
-        previous.filter((product) => product.id !== id)
-      );
-    }
+  if (isLinkedToPlan) {
+    alert("This product is linked to a plan. Delete the plan first.");
+    return;
   }
 
+  if (!window.confirm("Are you sure you want to delete this product?")) {
+    return;
+  }
+
+  try {
+    setError("");
+
+    await deleteProduct(id);
+
+    setProducts((previous) =>
+      previous.filter((product) => product.id !== id)
+    );
+  } catch (err) {
+    console.error("Error deleting product:", err);
+    setError(err.message || "Could not delete product.");
+  }
+}
   function handleCancel() {
     setForm(emptyForm);
     setShowForm(false);
@@ -226,6 +272,11 @@ function Products({ products, setProducts, plans }) {
       )}
 
       <div className="product-table-card">
+        {error && (
+  <p style={{ color: "red", padding: "10px" }}>
+    {error}
+  </p>
+)}
         <div className="product-table-header">
           <h3>All Products</h3>
 
@@ -251,41 +302,51 @@ function Products({ products, setProducts, plans }) {
             </thead>
 
             <tbody>
-              {filteredProducts.map((product) => (
-                <tr key={product.id}>
-                  <td className="product-name">{product.name}</td>
-                  <td>{product.type}</td>
-                  <td>₹{product.salesPrice.toLocaleString("en-IN")}</td>
-                  <td>₹{product.costPrice.toLocaleString("en-IN")}</td>
-                  <td>{product.notes || "—"}</td>
-                  <td>
-                    <div className="product-actions">
-                      <button
-                        className="product-edit-btn"
-                        onClick={() => handleEdit(product)}
-                      >
-                        Edit
-                      </button>
+  {loading ? (
+    <tr>
+      <td colSpan="6" className="product-empty">
+        Loading products...
+      </td>
+    </tr>
+  ) : (
+    <>
+      {filteredProducts.map((product) => (
+        <tr key={product.id}>
+          <td className="product-name">{product.name}</td>
+          <td>{product.type}</td>
+          <td>₹{product.salesPrice.toLocaleString("en-IN")}</td>
+          <td>₹{product.costPrice.toLocaleString("en-IN")}</td>
+          <td>{product.notes || "—"}</td>
+          <td>
+            <div className="product-actions">
+              <button
+                className="product-edit-btn"
+                onClick={() => handleEdit(product)}
+              >
+                Edit
+              </button>
 
-                      <button
-                        className="product-delete-btn"
-                        onClick={() => handleDelete(product.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              <button
+                className="product-delete-btn"
+                onClick={() => handleDelete(product.id)}
+              >
+                Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      ))}
 
-              {filteredProducts.length === 0 && (
-                <tr>
-                  <td colSpan="6" className="product-empty">
-                    No products found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
+      {filteredProducts.length === 0 && (
+        <tr>
+          <td colSpan="6" className="product-empty">
+            No products found.
+          </td>
+        </tr>
+      )}
+    </>
+  )}
+</tbody>
           </table>
         </div>
       </div>
