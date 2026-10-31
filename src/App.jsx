@@ -12,6 +12,8 @@ import Auth from './pages/Auth'
 import Products from './Pages/Products'
 import Plans from './Pages/Plans'
 
+import './App.css'
+
 const Placeholder = ({ name }) => (
   <div className="rounded-lg border border-dashed border-ink/25 p-10 text-center text-ink/60">
     The {name} page is coming from its owner.
@@ -29,6 +31,48 @@ export default function App() {
   const [page, setPage] = useState('dashboard')
   const [role, setRole] = useState('Admin')
   const [menuOpen, setMenuOpen] = useState(false)
+
+  const [products, setProducts] = useState([
+    {
+      id: 1,
+      name: 'Business Pro',
+      type: 'Software',
+      salesPrice: 999,
+      costPrice: 450,
+      notes: 'Monthly business software subscription',
+    },
+    {
+      id: 2,
+      name: 'Enterprise Suite',
+      type: 'Service',
+      salesPrice: 2499,
+      costPrice: 1200,
+      notes: 'Enterprise management package',
+    },
+  ])
+
+  const [plans, setPlans] = useState([
+    {
+      id: 1,
+      name: 'Business Pro Monthly',
+      productId: '1',
+      billingCycle: 'Monthly',
+      price: 999,
+      minQuantity: 1,
+      availableFrom: '2026-01-01',
+      availableTo: '',
+    },
+    {
+      id: 2,
+      name: 'Enterprise Yearly',
+      productId: '2',
+      billingCycle: 'Yearly',
+      price: 24999,
+      minQuantity: 1,
+      availableFrom: '2026-01-01',
+      availableTo: '',
+    },
+  ])
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -50,8 +94,20 @@ export default function App() {
 
   const pages = {
     dashboard: <Dashboard onNavigate={setPage} />,
-    products: <Products />,
-    plans: <Plans />,
+    products: (
+      <Products
+        products={products}
+        setProducts={setProducts}
+        plans={plans}
+      />
+    ),
+    plans: (
+      <Plans
+        products={products}
+        plans={plans}
+        setPlans={setPlans}
+      />
+    ),
   }
 
   return (
@@ -73,9 +129,12 @@ export default function App() {
         />
 
         <main className="px-4 pb-16 pt-4 lg:px-10">
-          {pages[page] || <Placeholder name={labels[page] || page} />}
+          {pages[page] || (
+            <Placeholder name={labels[page] || page} />
+          )}
         </main>
       </div>
     </div>
   )
 }
+

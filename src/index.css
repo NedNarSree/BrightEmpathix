@@ -1,5 +1,6 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -13,21 +14,70 @@
   --highlight: 181 255 194;
   --bg: 243 247 242;
   --text: 23 40 32;
+
+  /* Products and Plans compatibility */
+  --color-primary: #0F261F;
+  --color-secondary: #00592E;
+  --color-accent: #417777;
+  --color-highlight: #B5FFC2;
+  --color-background: #c2eabc;
+  --color-text: #172820;
+  --color-surface: #FFFFFF;
+  --color-border: #D9E4DA;
+
+  font-family: 'Instrument Sans', 'Inter', Arial, sans-serif;
+  color: var(--color-text);
+  background: var(--color-background);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html,
 body {
   @apply bg-canvas font-sans text-ink antialiased;
   font-variant-numeric: tabular-nums;
   margin: 0;
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+body {
+  min-height: 100vh;
 }
 
 #root {
   min-height: 100vh;
   width: 100%;
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  text-align: left;
 }
 
-h1, h2, h3, h4, p {
+h1,
+h2,
+h3,
+h4,
+p {
   margin-top: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
 }
 
 :focus-visible {
